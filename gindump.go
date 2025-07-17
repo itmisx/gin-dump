@@ -42,7 +42,7 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 			if err != nil {
 				dumpError = "parse req header err " + err.Error()
 			} else {
-				requestHeader = string(s)
+				requestHeader = s
 			}
 		}
 
@@ -77,21 +77,24 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 						dumpError = "parse req body err " + err.Error()
 						goto DumpRes
 					}
-					requestBody = string(s)
+					requestBody = s
 				case gin.MIMEPOSTForm:
 					bts, err := io.ReadAll(rdr)
 					if err != nil {
-						strB.WriteString(fmt.Sprintf("\nread rdr err \n %s", err.Error()))
+						dumpError = "read rdr err " + err.Error()
 						goto DumpRes
 					}
 					val, err := url.ParseQuery(string(bts))
-
+					if err != nil {
+						dumpError = "parse req body err" + err.Error()
+						goto DumpRes
+					}
 					s, err := FormatToJson(val, bodyHiddenFields)
 					if err != nil {
 						dumpError = "parse req body err" + err.Error()
 						goto DumpRes
 					}
-					requestBody = string(s)
+					requestBody = s
 				case gin.MIMEMultipartPOSTForm:
 				default:
 				}
@@ -104,12 +107,12 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 		endTs = time.Now().UnixMilli()
 		if showResp && showHeaders {
 			//dump res header
-			sHeader, err := FormatToJson(ctx.Writer.Header(), headerHiddenFields)
+			s, err := FormatToJson(ctx.Writer.Header(), headerHiddenFields)
 			if err != nil {
 				dumpError = "parse res header err " + err.Error()
 			} else {
 				// Response-Header
-				responseHeader = string(sHeader)
+				responseHeader = s
 			}
 		}
 
@@ -137,7 +140,7 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 						goto End
 					}
 					// Reponse body
-					responseBody = string(s)
+					responseBody = s
 				case gin.MIMEHTML:
 				default:
 				}
@@ -145,17 +148,25 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 		}
 
 	End:
+		var msg string
+		var fields []logx.Field
+		fields = append(fields, logx.String("request url", ctx.Request.URL.String()))
+		fields = append(fields, logx.String("request mothod", ctx.Request.Method))
+		fields = append(fields, logx.Int64("requst duration[ms]", endTs-startTs))
+		fields = append(fields, logx.Any("request header", requestHeader))
+		fields = append(fields, logx.Any("request body", requestBody))
+		fields = append(fields, logx.Any("response header", responseHeader))
+		fields = append(fields, logx.Any("response body", responseBody))
+		fields = append(fields, logx.String("dump-error", dumpError))
+		if (endTs - startTs) > 2000 {
+			msg = "slow gin request"
+		} else {
+			msg = "normal gin request"
+		}
 		logx.Debug(
 			context.Background(),
-			"gin request log",
-			logx.String("request url", ctx.Request.URL.String()),
-			logx.String("request mothod", ctx.Request.Method),
-			logx.Int64("requst duration[ms]", endTs-startTs),
-			logx.Any("request header", requestHeader),
-			logx.Any("request body", requestBody),
-			logx.Any("response header", responseHeader),
-			logx.Any("response body", responseBody),
-			logx.String("dump-error", dumpError),
+			msg,
+			fields...,
 		)
 	}
 }

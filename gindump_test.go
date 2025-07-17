@@ -21,7 +21,7 @@ func init() {
 	logx.Init(logx.Config{
 		Debug:  true,
 		Output: "console",
-	})
+	}, logx.String("service_name", "dev"))
 }
 
 func performRequest(r http.Handler, method, contentType string, path string, body io.Reader) *httptest.ResponseRecorder {
@@ -34,9 +34,7 @@ func performRequest(r http.Handler, method, contentType string, path string, bod
 
 func TestMIMEJSON(t *testing.T) {
 	router := gin.New()
-	router.Use(Dump(func(dumpStr string) {
-		fmt.Println(dumpStr)
-	}))
+	router.Use(Dump())
 
 	router.POST("/dump", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -62,14 +60,12 @@ func TestMIMEJSON(t *testing.T) {
 
 	body := bytes.NewBuffer(b)
 	performRequest(router, "POST", gin.MIMEJSON, "/dump", body)
-
+	<-make(chan int)
 }
 
 func TestMIMEPOSTFORM(t *testing.T) {
 	router := gin.New()
-	router.Use(Dump(func(dumpStr string) {
-		fmt.Println(dumpStr)
-	}))
+	router.Use(Dump())
 
 	router.POST("/dump", func(c *gin.Context) {
 		bts, err := httputil.DumpRequest(c.Request, true)
