@@ -15,11 +15,11 @@ import (
 	"github.com/itmisx/logx"
 )
 
-func Dump(cb func(dumpStr string)) gin.HandlerFunc {
-	return DumpWithOptions(true, true, true, true, true, cb)
+func Dump() gin.HandlerFunc {
+	return DumpWithOptions(true, true, true, true, true)
 }
 
-func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders bool, showCookies bool, cb func(dumpStr string)) gin.HandlerFunc {
+func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders bool, showCookies bool) gin.HandlerFunc {
 	headerHiddenFields := []string{}
 	bodyHiddenFields := []string{}
 
