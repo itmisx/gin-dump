@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/itmisx/logx"
@@ -28,11 +29,13 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 
 	return func(ctx *gin.Context) {
 		var strB strings.Builder
+		var startTs, endTs int64
 		var requestHeader interface{}
 		var requestBody interface{}
 		var responseHeader interface{}
 		var responseBody interface{}
 		var dumpError string
+		startTs = time.Now().UnixMilli()
 		if showReq && showHeaders {
 			//dump req header
 			s, err := FormatToJson(ctx.Request.Header, headerHiddenFields)
@@ -98,7 +101,7 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 			ctx.Writer = &bodyWriter{bodyCache: bytes.NewBufferString(""), ResponseWriter: ctx.Writer}
 			ctx.Next()
 		}
-
+		endTs = time.Now().UnixMilli()
 		if showResp && showHeaders {
 			//dump res header
 			sHeader, err := FormatToJson(ctx.Writer.Header(), headerHiddenFields)
@@ -147,6 +150,7 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 			"gin request log",
 			logx.String("request url", ctx.Request.URL.String()),
 			logx.String("request mothod", ctx.Request.Method),
+			logx.Int64("requst duration[ms]", endTs-startTs),
 			logx.Any("request header", requestHeader),
 			logx.Any("request body", requestBody),
 			logx.Any("response header", responseHeader),
