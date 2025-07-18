@@ -3,12 +3,10 @@ package gindump
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"mime"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -28,7 +26,6 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 	}
 
 	return func(ctx *gin.Context) {
-		var strB strings.Builder
 		var startTs, endTs int64
 		var requestHeader interface{}
 		var requestBody interface{}
@@ -40,7 +37,7 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 			//dump req header
 			s, err := FormatToJson(ctx.Request.Header, headerHiddenFields)
 			if err != nil {
-				dumpError = "parse req header err " + err.Error()
+				dumpError = "parse req header err: " + err.Error()
 			} else {
 				requestHeader = s
 			}
@@ -51,7 +48,7 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 			if ctx.Request.ContentLength > 0 {
 				buf, err := io.ReadAll(ctx.Request.Body)
 				if err != nil {
-					strB.WriteString(fmt.Sprintf("\nread bodyCache err \n %s", err.Error()))
+					dumpError = "read bodyCache err: " + err.Error()
 					goto DumpRes
 				}
 				rdr := io.NopCloser(bytes.NewBuffer(buf))
@@ -59,7 +56,7 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 				ctGet := ctx.Request.Header.Get("Content-Type")
 				ct, _, err := mime.ParseMediaType(ctGet)
 				if err != nil {
-					strB.WriteString(fmt.Sprintf("\ncontent_type: %s parse err \n %s", ctGet, err.Error()))
+					dumpError = "content_type  parse err: " + err.Error()
 					goto DumpRes
 				}
 
@@ -67,31 +64,31 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 				case gin.MIMEJSON:
 					bts, err := io.ReadAll(rdr)
 					if err != nil {
-						strB.WriteString(fmt.Sprintf("\nread rdr err \n %s", err.Error()))
+						dumpError = "read rdr err: " + err.Error()
 						goto DumpRes
 					}
 
 					s, err := FormatJsonBytes(bts, bodyHiddenFields)
 					if err != nil {
 
-						dumpError = "parse req body err " + err.Error()
+						dumpError = "parse req body err: " + err.Error()
 						goto DumpRes
 					}
 					requestBody = s
 				case gin.MIMEPOSTForm:
 					bts, err := io.ReadAll(rdr)
 					if err != nil {
-						dumpError = "read rdr err " + err.Error()
+						dumpError = "read rdr err: " + err.Error()
 						goto DumpRes
 					}
 					val, err := url.ParseQuery(string(bts))
 					if err != nil {
-						dumpError = "parse req body err" + err.Error()
+						dumpError = "parse req body err: " + err.Error()
 						goto DumpRes
 					}
 					s, err := FormatToJson(val, bodyHiddenFields)
 					if err != nil {
-						dumpError = "parse req body err" + err.Error()
+						dumpError = "parse req body err: " + err.Error()
 						goto DumpRes
 					}
 					requestBody = s
@@ -109,7 +106,7 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 			//dump res header
 			s, err := FormatToJson(ctx.Writer.Header(), headerHiddenFields)
 			if err != nil {
-				dumpError = "parse res header err " + err.Error()
+				dumpError = "parse res header err: " + err.Error()
 			} else {
 				// Response-Header
 				responseHeader = s
@@ -119,7 +116,7 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 		if showResp && showBody {
 			bw, ok := ctx.Writer.(*bodyWriter)
 			if !ok {
-				strB.WriteString("\nbodyWriter was override , can not read bodyCache")
+				dumpError = "bodyWriter was override , can not read bodyCache"
 				goto End
 			}
 
@@ -128,15 +125,14 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 				ctGet := ctx.Writer.Header().Get("Content-Type")
 				ct, _, err := mime.ParseMediaType(ctGet)
 				if err != nil {
-					strB.WriteString(fmt.Sprintf("\ncontent-type: %s parse  err \n %s", ctGet, err.Error()))
+					dumpError = "content-type parse  err: " + err.Error()
 					goto End
 				}
 				switch ct {
 				case gin.MIMEJSON:
-
 					s, err := FormatJsonBytes(bw.bodyCache.Bytes(), bodyHiddenFields)
 					if err != nil {
-						dumpError = "parse bodyCache err " + err.Error()
+						dumpError = "parse bodyCache err: " + err.Error()
 						goto End
 					}
 					// Reponse body
