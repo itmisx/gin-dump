@@ -146,14 +146,14 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 	End:
 		var msg string
 		var fields []logx.Field
-		fields = append(fields, logx.String("request url", ctx.Request.URL.String()))
-		fields = append(fields, logx.String("request mothod", ctx.Request.Method))
-		fields = append(fields, logx.Int64("requst duration[ms]", endTs-startTs))
-		fields = append(fields, logx.Any("request header", requestHeader))
-		fields = append(fields, logx.Any("request body", requestBody))
-		fields = append(fields, logx.Any("response header", responseHeader))
-		fields = append(fields, logx.Any("response body", responseBody))
-		fields = append(fields, logx.String("dump-error", dumpError))
+		fields = append(fields, logx.String("request url", ctx.Request.URL.String())) // 请求的url
+		fields = append(fields, logx.String("request mothod", ctx.Request.Method))    // 请求方法
+		fields = append(fields, logx.Int64("elapsed[ms]", endTs-startTs))             // 耗费时长，衣拉普斯特
+		fields = append(fields, logx.Any("request header", requestHeader))            // 请求的header
+		fields = append(fields, logx.Any("request body", requestBody))                // 请求的body
+		fields = append(fields, logx.Any("response header", responseHeader))          // 响应的header
+		fields = append(fields, logx.Any("response body", responseBody))              // 响应的body
+		fields = append(fields, logx.String("dump-error", dumpError))                 // 解析过程中的错误信息
 		if (endTs - startTs) > 2000 {
 			msg = "slow gin request"
 		} else {
