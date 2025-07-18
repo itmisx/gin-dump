@@ -60,7 +60,7 @@ func TestMIMEJSON(t *testing.T) {
 
 	body := bytes.NewBuffer(b)
 	performRequest(router, "POST", gin.MIMEJSON, "/dump", body)
-	<-make(chan int)
+	<-make(chan int) // wait loki push
 }
 
 func TestMIMEPOSTFORM(t *testing.T) {
@@ -87,4 +87,5 @@ func TestMIMEPOSTFORM(t *testing.T) {
 
 	body := strings.NewReader(form.Encode())
 	performRequest(router, "POST", gin.MIMEPOSTForm, "/dump", body)
+	<-make(chan int) // wait loki push
 }
