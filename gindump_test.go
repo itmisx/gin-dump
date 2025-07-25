@@ -32,6 +32,21 @@ func performRequest(r http.Handler, method, contentType string, path string, bod
 	return w
 }
 
+func TestMIMEPlain(t *testing.T) {
+	router := gin.New()
+	router.Use(Dump())
+
+	router.POST("/dump", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"ok":   true,
+			"data": "gin-dump",
+		})
+	})
+	body := bytes.NewBuffer([]byte("plain text"))
+	performRequest(router, "POST", gin.MIMEPlain, "/dump", body)
+	<-make(chan int) // wait loki push
+}
+
 func TestMIMEJSON(t *testing.T) {
 	router := gin.New()
 	router.Use(Dump())

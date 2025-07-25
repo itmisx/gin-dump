@@ -61,6 +61,13 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 				}
 
 				switch ct {
+				case gin.MIMEPlain:
+					bts, err := io.ReadAll(rdr)
+					if err != nil {
+						dumpError = "read rdr err: " + err.Error()
+						goto DumpRes
+					}
+					requestBody = string(bts)
 				case gin.MIMEJSON:
 					bts, err := io.ReadAll(rdr)
 					if err != nil {
