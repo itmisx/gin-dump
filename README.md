@@ -10,7 +10,7 @@
 * [X] application/x-www-form-urlencoded
 * [ ] text/xml
 * [ ] application/xml
-* [ ] text/plain
+* [X] text/plain
 
 ## Usage
 
