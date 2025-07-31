@@ -160,7 +160,9 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 		fields = append(fields, logx.Any("request body", requestBody))                // 请求的body
 		fields = append(fields, logx.Any("response header", responseHeader))          // 响应的header
 		fields = append(fields, logx.Any("response body", responseBody))              // 响应的body
-		fields = append(fields, logx.String("dump-error", dumpError))                 // 解析过程中的错误信息
+		if dumpError != "" {
+			fields = append(fields, logx.String("dump error ", dumpError)) // 解析过程中的错误信息
+		}
 		if (endTs - startTs) > 2000 {
 			msg = "slow gin request"
 		} else {
