@@ -3,6 +3,7 @@ package gindump
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"mime"
 	"net/http"
@@ -67,7 +68,13 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 						dumpError = "read rdr err: " + err.Error()
 						goto DumpRes
 					}
-					requestBody = string(bts)
+					var s interface{}
+					err = json.Unmarshal(bts, &s)
+					if err == nil {
+						requestBody = s
+					} else {
+						requestBody = string(bts)
+					}
 				case gin.MIMEJSON:
 					bts, err := io.ReadAll(rdr)
 					if err != nil {
