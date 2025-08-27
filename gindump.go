@@ -142,6 +142,10 @@ func DumpWithOptions(showReq bool, showResp bool, showBody bool, showHeaders boo
 					dumpError = "content-type parse  err: " + err.Error()
 					goto End
 				}
+				if bw.bodyCache.Len() > 1000 {
+					responseBody = "hide response body(body too long)"
+					goto End
+				}
 				switch ct {
 				case gin.MIMEJSON:
 					s, err := FormatJsonBytes(bw.bodyCache.Bytes(), bodyHiddenFields)
